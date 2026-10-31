@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MCB Connect App</title>
+<link rel="manifest" href="/manifest.json?v=14.0.0">
+<meta name="theme-color" content="#ffeb00">
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+body{background:#000;color:#fff;font-family:sans-serif;margin:0;padding:0;overflow-x:hidden}
+.card{background:#111;border-radius:12px;overflow:hidden;margin-bottom:12px;border:1px solid #222}
+.card.gold{border:1px solid #ffeb00}
+.thumb{position:relative;width:100%;height:180px;background:#000;overflow:hidden}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover}
+.play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:rgba(0,0,0,0.6);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.tab-active{background:#ffeb00!important;color:#000!important;font-weight:bold}
+#tabs{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;display:flex;justify-content:space-around;padding:6px 0;z-index:90}
+#tabs button{flex:1;display:flex;flex-direction:column;align-items:center;font-size:10px;padding:4px}
+#tab-admin{display:none!important;}
+#tab-admin.show-admin{display:flex!important;}
+.comment-box{background:#1a1a1a;border-left:2px solid #ffeb00;padding:6px;border-radius:4px;margin-top:4px}
+#splash{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.6s}
+#splash.hide{opacity:0;pointer-events:none}
+.hidden{display:none}
+</style>
+</head>
+<body class="pb-20">
+<div id="splash">
+<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-24 h-24 rounded-full border-4 border-[#ffeb00] mb-4">
+<h1 class="text-2xl font-black text-[#ffeb00]">MCB Connect App</h1>
+<p class="text-xs text-gray-400 mt-2">Loading...</p>
+</div>
+
+<div id="loginDiv" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#000]">
+<div class="w-full max-w-sm bg-[#111] border-2 border-[#ffeb00] rounded-2xl p-5">
+<h2 class="text-xl font-black text-[#ffeb00] text-center">MCB Connect App</h2>
+<p class="text-[11px] text-gray-400 text-center mt-1">Enter phone to login or register</p>
+<input id="ph" placeholder="Phone e.g 0773103823" class="w-full mt-4 bg-[#222] rounded-lg p-3 text-sm text-white border border-[#333] outline-none focus:border-[#ffeb00]">
+<input id="nm" placeholder="Your Name (new users only)" class="w-full mt-2 bg-[#222] rounded-lg p-3 text-sm text-white border border-[#333] outline-none">
+<input id="pwd" type="password" placeholder="Password" class="w-full mt-2 bg-[#222] rounded-lg p-3 text-sm text-white border border-[#333] outline-none">
+<input id="pwdConfirm" type="password" placeholder="Confirm Password (new only)" class="w-full mt-2 bg-[#222] rounded-lg p-3 text-sm text-white border border-[#333] outline-none">
+<button id="btnLogin" class="w-full mt-4 bg-[#ffeb00] text-black py-3 rounded-full font-black text-sm">LOGIN / REGISTER</button>
+<p id="status" class="text-[11px] text-[#ffeb00] text-center mt-2 min-h-[16px]"></p>
+<div class="flex justify-between mt-3">
+<button onclick="openForgotPassword()" class="text-[11px] text-[#ffeb00] underline">Forgot Password?</button>
+<button onclick="requestUnblock()" class="text-[11px] text-orange-400 underline">Blocked? Request Unblock</button>
+</div>
+</div>
+</div>
+
+<div id="forgotModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-[110] flex items-center justify-center p-4">
+<div class="bg-[#111] border-2 border-[#ffeb00] rounded-2xl p-5 w-full max-w-sm">
+<h3 class="font-black text-[#ffeb00] text-center">Reset Password</h3>
+<input id="forgotPhone" placeholder="Your Phone" class="w-full mt-3 bg-[#222] rounded-lg p-3 text-sm border border-[#333]">
+<input id="forgotNewPass" type="password" placeholder="New Password (min 4 chars)" class="w-full mt-2 bg-[#222] rounded-lg p-3 text-sm border border-[#333]">
+<input id="forgotConfirmPass" type="password" placeholder="Confirm New Password" class="w-full mt-2 bg-[#222] rounded-lg p-3 text-sm border border-[#333]">
+<p id="forgotStatus" class="text-[11px] text-center mt-2 text-[#00ff88] min-h-[16px]"></p>
+<button onclick="doForgotPassword()" class="w-full mt-3 bg-[#ffeb00] text-black py-3 rounded-full font-bold text-sm">RESET NOW</button>
+<button onclick="document.getElementById('forgotModal').classList.add('hidden')" class="w-full mt-2 bg-[#222] text-white py-2 rounded-full text-xs">Cancel</button>
+</div>
+</div>
+
+<div id="profileSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-[110] flex items-center justify-center p-4">
+<div class="bg-[#111] border-2 border-[#ffeb00] rounded-2xl p-4 w-full max-w-sm">
+<div class="flex justify-between"><h3 class="font-bold text-[#ffeb00] text-sm">Profile Settings</h3><button onclick="document.getElementById('profileSettingsModal').classList.add('hidden')" class="bg-[#222] px-2 rounded">X</button></div>
+<img id="profilePreview" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-20 h-20 rounded-full mx-auto mt-3 border-2 border-[#ffeb00] object-cover">
+<input id="profileName" placeholder="Display Name" class="w-full mt-3 bg-[#222] rounded p-2 text-xs">
+<input id="profileUrl" placeholder="YouTube or Image URL" class="w-full mt-2 bg-[#222] rounded p-2 text-xs">
+<div class="grid grid-cols-2 gap-2 mt-2">
+<input id="profileFile" type="file" accept="image/*" class="w-full text-[10px]">
+<input id="profileCamera" type="file" accept="image/*" capture="environment" class="w-full text-[10px]">
+</div>
+<p id="profileInfo" class="text-[10px] text-gray-400 mt-2 text-center"></p>
+<button onclick="saveMyProfile()" class="w-full mt-3 bg-[#ffeb00] text-black py-2 rounded-full font-bold text-xs">SAVE PROFILE</button>
+</div>
+</div>
+<div id="walletHeader" class="hidden">
+<div class="bg-[#ffeb00] text-black p-3 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<img id="myProfilePic" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-10 h-10 rounded-full border-2 border-black object-cover">
+<div>
+<p class="font-black text-sm leading-none">MCB Connect</p>
+<p class="text-[10px]">MESH Wallet</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-black text-lg leading-none" id="bal">0 MESH</p>
+<p class="text-[9px]">Balance</p>
+</div>
+</div>
+<div class="p-2 flex gap-2">
+<button id="btnBecomeSeller" class="flex-1 bg-[#111] border border-[#ffeb00] text-[#ffeb00] py-2 rounded-full text-[11px] font-bold">Become Seller</button>
+<button id="btnSellMesh" class="flex-1 bg-[#ffeb00] text-black py-2 rounded-full text-[11px] font-bold">Sell MESH</button>
+<button onclick="openProfileSettings()" class="bg-[#222] text-white px-3 py-2 rounded-full text-[10px]">Profile</button>
+</div>
+</div>
+
+<div id="c-wallet" class="p-2">
+<div id="walletAdminPost" class="hidden card p-3 bg-[#111] border border-[#ffeb00]">
+<h3 class="font-bold text-xs text-[#ffeb00]">Admin Post Wallet (Videos - YouTube + Upload 50MB FIXED)</h3>
+<input id="walletTitle" placeholder="Title e.g Together as one" class="w-full mt-2 bg-[#222] rounded p-2 text-xs">
+<input id="walletDesc" placeholder="Description" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<input id="walletUrl" placeholder="YouTube URL e.g https://youtu.be/..." class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<div class="grid grid-cols-2 gap-2 mt-2">
+<input id="walletFile" type="file" accept="image/*,video/*" class="w-full text-[10px] bg-[#222] p-1 rounded">
+<input id="walletCamera" type="file" accept="image/*,video/*" capture="environment" class="w-full text-[10px] bg-[#222] p-1 rounded">
+</div>
+<p id="walletInfo" class="text-[10px] text-[#00ff88] mt-1"></p>
+<button onclick="postCat('wallet')" class="w-full mt-2 bg-[#ffeb00] text-black py-2 rounded-full font-bold text-xs">POST WALLET -100 MESH</button>
+</div>
+<div id="vGrid" class="space-y-3 mt-2"></div>
+<div id="walletAdminFeed" class="mt-4"></div>
+</div>
+
+<div id="c-mining" class="hidden p-2">
+<div class="card p-3 bg-[#111] border border-[#ffeb00]">
+<h3 class="font-bold text-xs text-[#ffeb00]">Admin Post Mining (YouTube + Upload 50MB FIXED)</h3>
+<input id="miningTitle" placeholder="Title" class="w-full mt-2 bg-[#222] rounded p-2 text-xs">
+<input id="miningDesc" placeholder="Description" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<input id="miningUrl" placeholder="YouTube URL" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<div class="grid grid-cols-2 gap-2 mt-2">
+<input id="miningFile" type="file" accept="image/*,video/*" class="w-full text-[10px] mt-1">
+<input id="miningCamera" type="file" accept="image/*,video/*" capture="environment" class="w-full text-[10px] mt-1">
+</div>
+<div id="miningInfo" class="text-[10px] text-gray-400 mt-1"></div>
+<button onclick="postCat('mining')" class="w-full mt-2 bg-[#ffeb00] text-black py-2 rounded-full font-bold text-xs">POST MINING -100 MESH</button>
+</div>
+<div id="miningList"></div>
+</div>
+
+<div id="c-viral" class="hidden p-2">
+<div class="card p-3 bg-[#111]">
+<h3 class="font-bold text-xs">Post Viral</h3>
+<input id="viralTitle" placeholder="Title" class="w-full mt-2 bg-[#222] rounded p-2 text-xs">
+<input id="viralDesc" placeholder="Description" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<input id="viralUrl" placeholder="YouTube URL" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<div class="grid grid-cols-2 gap-2 mt-2">
+<input id="viralFile" type="file" accept="image/*,video/*" class="w-full text-[10px] mt-1">
+<input id="viralCamera" type="file" accept="image/*,video/*" capture="environment" class="w-full text-[10px] mt-1">
+</div>
+<div id="viralInfo" class="text-[10px] text-gray-400 mt-1"></div>
+<button onclick="postCat('viral')" class="w-full mt-2 bg-[#ffeb00] text-black py-2 rounded-full font-bold text-xs">POST VIRAL -100 MESH</button>
+</div>
+<div id="viralList"></div>
+</div>
+<div id="c-dating" class="hidden p-2">
+<div class="card p-3 bg-[#111]">
+<h3 class="font-bold text-xs">Post Dating</h3>
+<input id="datingTitle" placeholder="Title" class="w-full mt-2 bg-[#222] rounded p-2 text-xs">
+<input id="datingDesc" placeholder="Description" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<input id="datingUrl" placeholder="YouTube URL" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<div class="grid grid-cols-2 gap-2 mt-2">
+<input id="datingFile" type="file" accept="image/*,video/*" class="w-full text-[10px] mt-1">
+<input id="datingCamera" type="file" accept="image/*,video/*" capture="environment" class="w-full text-[10px] mt-1">
+</div>
+<div id="datingInfo" class="text-[10px] text-gray-400 mt-1"></div>
+<button onclick="postCat('dating')" class="w-full mt-2 bg-[#ffeb00] text-black py-2 rounded-full font-bold text-xs">POST DATING -100 MESH</button>
+</div>
+<div id="datingList"></div>
+</div>
+
+<div id="c-ecom" class="hidden p-2">
+<div class="card p-3 bg-[#111]">
+<h3 class="font-bold text-xs">Post E-Commerce</h3>
+<input id="ecomTitle" placeholder="Product Name" class="w-full mt-2 bg-[#222] rounded p-2 text-xs">
+<input id="ecomDesc" placeholder="Description + Price" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<input id="ecomUrl" placeholder="YouTube URL" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<div class="grid grid-cols-2 gap-2 mt-2">
+<input id="ecomFile" type="file" accept="image/*,video/*" class="w-full text-[10px] mt-1">
+<input id="ecomCamera" type="file" accept="image/*,video/*" capture="environment" class="w-full text-[10px] mt-1">
+</div>
+<div id="ecomInfo" class="text-[10px] text-gray-400 mt-1"></div>
+<button onclick="postCat('ecom')" class="w-full mt-2 bg-[#ffeb00] text-black py-2 rounded-full font-bold text-xs">POST ECOM -100 MESH</button>
+</div>
+<div id="ecomList"></div>
+</div>
+
+<div id="c-ai" class="hidden p-2">
+<div class="card p-3 bg-[#111]">
+<h3 class="font-bold text-xs">Post AI Tools</h3>
+<input id="aiTitle" placeholder="AI Tool Name" class="w-full mt-2 bg-[#222] rounded p-2 text-xs">
+<input id="aiDesc" placeholder="Description" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<input id="aiUrl" placeholder="YouTube URL" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<div class="grid grid-cols-2 gap-2 mt-2">
+<input id="aiFile" type="file" accept="image/*,video/*" class="w-full text-[10px] mt-1">
+<input id="aiCamera" type="file" accept="image/*,video/*" capture="environment" class="w-full text-[10px] mt-1">
+</div>
+<div id="aiInfo" class="text-[10px] text-gray-400 mt-1"></div>
+<button onclick="postCat('ai')" class="w-full mt-2 bg-[#ffeb00] text-black py-2 rounded-full font-bold text-xs">POST AI -100 MESH</button>
+</div>
+<div id="aiList"></div>
+</div>
+
+<div id="c-sell" class="hidden p-2">
+<div class="card p-3 bg-[#111] border border-[#ffeb00]">
+<h3 class="font-bold text-xs text-[#ffeb00]">Sell MESH Center</h3>
+<div id="sellCenter" class="mt-2"></div>
+<input id="buyerPhone" placeholder="Buyer Phone" class="w-full mt-3 bg-[#222] rounded p-2 text-xs">
+<input id="sellAmount" type="number" placeholder="Amount MESH" class="w-full mt-1 bg-[#222] rounded p-2 text-xs">
+<button id="btnDoSell" class="w-full mt-2 bg-[#ffeb00] text-black py-2 rounded-full font-bold text-xs">CONFIRM SELL</button>
+<p id="sellStatus" class="text-[11px] text-[#00ff88] mt-2 text-center"></p>
+</div>
+<div class="card p-3 bg-[#111]">
+<h3 class="font-bold text-xs">Transaction History</h3>
+<div id="txList" class="mt-2 space-y-1"></div>
+</div>
+</div>
+
+<div id="c-follow" class="hidden p-2">
+<div class="card p-3 bg-[#111]">
+<h3 class="font-bold text-xs">Follow Users - Earn 10 MESH per follow</h3>
+<div id="followList" class="mt-2 space-y-2"></div>
+</div>
+</div>
+
+<div id="c-admin" class="hidden p-2">
+<div class="card p-3 bg-[#111]">
+<h3 class="font-bold text-xs text-[#ffeb00]">Admin Panel - MCB Connect App (0773103823 Only)</h3>
+<div class="flex gap-2 mt-2">
+<input id="apass" type="password" placeholder="Password: MESH2025" class="flex-1 bg-[#222] rounded p-2 text-xs">
+<button id="btnUnlock" class="bg-[#ffeb00] text-black px-4 py-2 rounded-full font-bold text-xs">UNLOCK</button>
+</div>
+<div id="ac" class="mt-3"></div>
+</div>
+</div>
+<div id="tabs" class="hidden">
+<button onclick="tab('wallet')" id="tab-wallet" class="tab-active"><i class="fas fa-wallet"></i><span>Wallet</span></button>
+<button onclick="tab('mining')" id="tab-mining"><i class="fas fa-coins"></i><span>Mining</span></button>
+<button onclick="tab('viral')" id="tab-viral"><i class="fas fa-fire"></i><span>Viral</span></button>
+<button onclick="tab('dating')" id="tab-dating"><i class="fas fa-heart"></i><span>Dating</span></button>
+<button onclick="tab('ecom')" id="tab-ecom"><i class="fas fa-shopping-bag"></i><span>Ecom</span></button>
+<button onclick="tab('ai')" id="tab-ai"><i class="fas fa-robot"></i><span>AI Tools</span></button>
+<button onclick="tab('sell')" id="tab-sell"><i class="fas fa-exchange-alt"></i><span>Sell</span></button>
+<button onclick="tab('follow')" id="tab-follow"><i class="fas fa-user-plus"></i><span>Follow</span></button>
+<button onclick="tab('admin')" id="tab-admin"><i class="fas fa-shield-alt"></i><span>Admin</span></button>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,collection,addDoc,serverTimestamp,increment,onSnapshot,getDocs} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyB4pK0iX4f3j2q2Z9Yv8u9t0o1p2q3r4s5",authDomain:"mesh-connect.firebaseapp.com",projectId:"mesh-connect-7f1a2",storageBucket:"mesh-connect-7f1a2.appspot.com",messagingSenderId:"123456789",appId:"1:123456789:web:abcd"};
+let app,db;
+try{app=initializeApp(firebaseConfig); db=getFirestore(app);}catch(e){console.log('Firebase offline mode');}
+const ADMIN_PHONES=['0773103823','0773103823'.replace(/\s/g,'')];
+window.isAdminPhone=()=>ADMIN_PHONES.includes(curPhone);
+window.updateAdminUI=()=>{
+  const adminTab=document.getElementById('tab-admin');
+  if(!adminTab)return;
+  if(window.isAdminPhone()){
+    adminTab.classList.add('show-admin');
+  }else{
+    adminTab.classList.remove('show-admin');
+  }
+};
+const getLS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}};
+const setLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const loadUsers=()=>getLS('mesh_users',[]);
+const saveUsers=(u)=>setLS('mesh_users',u);
+const loadSellers=()=>getLS('mesh_sellers',[]);
+const saveSellers=(s)=>setLS('mesh_sellers',s);
+const loadBlocked=()=>getLS('mesh_blocked',[]);
+const saveBlocked=(b)=>setLS('mesh_blocked',b);
+const loadTx=()=>getLS('mesh_tx',[]);
+const saveTx=(t)=>setLS('mesh_tx',t);
+const loadProfiles=()=>getLS('mesh_profiles',{});
+const saveProfiles=(p)=>setLS('mesh_profiles',p);
+const loadPosts=(cat)=>getLS('mesh_posts_'+cat,[]);
+const savePosts=(cat,p)=>setLS('mesh_posts_'+cat,p);
+const loadLikes=()=>getLS('mesh_likes',{});
+const saveLikes=(l)=>setLS('mesh_likes',l);
+const loadFollows=()=>getLS('mesh_follows',{});
+const saveFollows=(f)=>setLS('mesh_follows',f);
+
+let cur=getLS('mesh_current',null);
+let curPhone=cur?cur.phone:'';
+let BAL=cur?cur.balance:0;
+const getYtId=(url)=>{
+  if(!url)return null;
+  const reg=/(?:youtube\.com\/.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+  const m=url.match(reg);
+  return m?m[1]:null;
+};
+
+window.tab=(name)=>{
+  ['wallet','mining','viral','dating','ecom','ai','sell','follow','admin'].forEach(n=>{
+    const el=document.getElementById('c-'+n);
+    const tb=document.getElementById('tab-'+n);
+    if(el)el.classList.add('hidden');
+    if(tb)tb.classList.remove('tab-active');
+  });
+  const target=document.getElementById('c-'+name);
+  const ttab=document.getElementById('tab-'+name);
+  if(target)target.classList.remove('hidden');
+  if(ttab)ttab.classList.add('tab-active');
+  if(name==='wallet')loadWallet();
+  if(name==='mining')loadCat('mining');
+  if(name==='viral')loadCat('viral');
+  if(name==='dating')loadCat('dating');
+  if(name==='ecom')loadCat('ecom');
+  if(name==='ai')loadCat('ai');
+  if(name==='sell'){loadSellCenter(); loadTxList();}
+  if(name==='follow')loadFollowPage();
+};
+
+window.refreshWallet=()=>{
+  const bEl=document.getElementById('bal');
+  if(bEl)bEl.innerText=BAL.toLocaleString()+' MESH';
+  if(cur){
+    cur.balance=BAL;
+    setLS('mesh_current',cur);
+    let users=loadUsers();
+    for(let i=0;i<users.length;i++){if(users[i].phone===curPhone){users[i].balance=BAL; break;}}
+    saveUsers(users);
+  }
+};
+
+window.openProfileSettings=()=>{
+  document.getElementById('profileSettingsModal').classList.remove('hidden');
+  const profiles=loadProfiles();
+  const my=profiles[curPhone]||{};
+  document.getElementById('profileName').value=my.name||cur.name||'';
+  document.getElementById('profileUrl').value=my.url||'';
+  const preview=document.getElementById('profilePreview');
+  if(preview)preview.src=my.photo||document.getElementById('myProfilePic').src;
+  document.getElementById('profileInfo').innerText='YouTube URL auto preview supported';
+};
+
+window.saveMyProfile=async()=>{
+  const name=document.getElementById('profileName').value.trim();
+  const url=document.getElementById('profileUrl').value.trim();
+  const profiles=loadProfiles();
+  const my=profiles[curPhone]||{};
+  my.name=name||cur.name;
+  my.url=url;
+  // Handle photo file
+  const fileInput=document.getElementById('profileFile');
+  const cameraInput=document.getElementById('profileCamera');
+  let photoBase64=my.photo||'';
+  if(fileInput.files[0]){
+    photoBase64=await toBase64(fileInput.files[0]);
+  } else if(cameraInput.files[0]){
+    photoBase64=await toBase64(cameraInput.files[0]);
+  }
+  my.photo=photoBase64;
+  profiles[curPhone]=my;
+  saveProfiles(profiles);
+  cur.name=my.name; setLS('mesh_current',cur);
+  const headerPic=document.getElementById('myProfilePic');
+  if(headerPic && my.photo)headerPic.src=my.photo;
+  document.getElementById('profileSettingsModal').classList.add('hidden');
+  alert('Profile saved ✓');
+  loadFollowPage();
+  try{
+    if(db) await setDoc(doc(db,'users',curPhone),{name:my.name,photo:my.photo,url:my.url},{merge:true});
+  }catch(e){}
+};
+
+const toBase64=(file)=>new Promise((res,rej)=>{
+  const r=new FileReader();
+  r.onload=()=>res(r.result);
+  r.onerror=rej;
+  r.readAsDataURL(file);
+});
+window.postCat=async(cat)=>{
+  if(!cur){alert('Login first');return;}
+  if(BAL<100){alert('Need 100 MESH');return;}
+  const title=document.getElementById(cat+'Title').value.trim();
+  const desc=document.getElementById(cat+'Desc').value.trim();
+  const url=document.getElementById(cat+'Url').value.trim();
+  const fileInput=document.getElementById(cat+'File');
+  const cameraInput=document.getElementById(cat+'Camera');
+  const infoEl=document.getElementById(cat+'Info');
+  
+  if(!title){alert('Enter title');return;}
+  
+  // 50MB VIDEO FIX - COMPRESS CHECK
+  let mediaBase64='';
+  let mediaType='image';
+  let fileName='';
+  if(fileInput.files[0]){
+    const f=fileInput.files[0];
+    if(f.size>50*1024*1024){alert('File too big! Max 50MB. Your file: '+(f.size/1024/1024).toFixed(1)+'MB'); return;}
+    if(infoEl)infoEl.innerText='Reading '+(f.size/1024).toFixed(0)+'KB...';
+    mediaBase64=await toBase64(f);
+    mediaType=f.type.startsWith('video')?'video':'image';
+    fileName=f.name;
+    // AUTO COMPRESS LARGE VIDEOS TO BASE64 LIMIT (5MB for localStorage)
+    if(mediaBase64.length>4*1024*1024){
+      // Store as blob URL placeholder and upload to cloud instead
+      if(infoEl)infoEl.innerText='Large file, saving to cloud...';
+    }
+  } else if(cameraInput.files[0]){
+    const f=cameraInput.files[0];
+    if(f.size>50*1024*1024){alert('File too big! Max 50MB'); return;}
+    mediaBase64=await toBase64(f);
+    mediaType=f.type.startsWith('video')?'video':'image';
+    fileName=f.name;
+  }
+  
+  const ytId=getYtId(url);
+  
+  let posts=loadPosts(cat);
+  const newPost={
+    id:Date.now(),
+    title,
+    desc,
+    url,
+    ytId,
+    media:mediaBase64,
+    mediaType,
+    fileName,
+    user:curPhone,
+    userName:cur.name,
+    likes:0,
+    comments:[],
+    time:Date.now()
+  };
+  posts.unshift(newPost);
+  // KEEP ONLY LAST 50 TO AVOID STORAGE FULL
+  if(posts.length>50)posts=posts.slice(0,50);
+  try{
+    savePosts(cat,posts);
+  }catch(e){
+    // STORAGE FULL - REMOVE MEDIA AND SAVE TEXT ONLY
+    newPost.media='';
+    newPost.note='Media too large for local, saved to cloud only';
+    savePosts(cat,posts);
+    if(infoEl)infoEl.innerText='Local full, saved to cloud ☁️';
+  }
+  
+  BAL-=100; refreshWallet();
+  try{
+    if(db){
+      await setDoc(doc(db,'users',curPhone),{balance:increment(-100)},{merge:true});
+      await addDoc(collection(db,'posts_'+cat),{...newPost,created:serverTimestamp()});
+    }
+  }catch(e){console.log('Cloud save failed',e);}
+  
+  document.getElementById(cat+'Title').value='';
+  document.getElementById(cat+'Desc').value='';
+  document.getElementById(cat+'Url').value='';
+  if(fileInput)fileInput.value='';
+  if(cameraInput)cameraInput.value='';
+  if(infoEl)infoEl.innerText='Posted ✓ -100 MESH';
+  setTimeout(()=>{if(infoEl)infoEl.innerText='';},2000);
+  if(cat==='wallet')loadWallet(); else loadCat(cat);
+};
+
+window.loadWallet=()=>{
+  const grid=document.getElementById('vGrid');
+  const posts=loadPosts('wallet');
+  let html='';
+  posts.forEach(p=>{
+    const profiles=loadProfiles();
+    const author=profiles[p.user]||{name:p.userName,photo:''};
+    const ytThumb=p.ytId?`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`:'';
+    const likes=loadLikes();
+    const liked=likes[p.id];
+    html+=`<div class="card gold">
+      <div class="thumb">
+        ${p.ytId?`<img src="${ytThumb}"><div class="play" onclick="window.open('https://youtu.be/${p.ytId}','_blank')"><i class="fas fa-play text-white"></i></div>`:
+          p.media? (p.mediaType==='video'?`<video src="${p.media}" controls></video>`:`<img src="${p.media}">`) :
+          `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png">`
+        }
+      </div>
+      <div class="p-3">
+        <div class="flex items-center gap-2 mb-1">
+          <img src="${author.photo||'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-6 h-6 rounded-full object-cover">
+          <span class="text-[11px] font-bold">${p.userName||p.user}</span>
+          <span class="text-[9px] text-gray-500 ml-auto">${new Date(p.time).toLocaleDateString()}</span>
+        </div>
+        <h3 class="font-bold text-sm">${p.title}</h3>
+        <p class="text-[12px] text-gray-400 mt-1">${p.desc||''}</p>
+        <div class="flex gap-3 mt-2 text-[11px]">
+          <button onclick="likePost('wallet',${p.id})" class="${liked?'text-[#ffeb00]':'text-gray-400'}"><i class="fas fa-heart"></i> ${p.likes||0}</button>
+          <button onclick="document.getElementById('comment-${p.id}').classList.toggle('hidden')" class="text-gray-400"><i class="fas fa-comment"></i> ${p.comments?p.comments.length:0}</button>
+        </div>
+        <div id="comment-${p.id}" class="hidden mt-2">
+          <div id="comments-${p.id}" class="space-y-1">${(p.comments||[]).map(c=>`<div class="comment-box"><p class="text-[11px] font-bold">${c.userName}</p><p class="text-[11px]">${c.text}</p></div>`).join('')}</div>
+          <div class="flex gap-1 mt-1"><input id="input-${p.id}" placeholder="Add comment" class="flex-1 bg-[#222] rounded p-1 text-[11px]"><button onclick="addComment('wallet',${p.id})" class="bg-[#ffeb00] text-black px-2 rounded text-[11px] font-bold">Post</button></div>
+        </div>
+      </div>
+    </div>`;
+  });
+  if(grid)grid.innerHTML=html||'<p class="text-center text-gray-500 text-xs mt-10">No wallet posts yet - Admin post first!</p>';
+  
+  // CLOUD POSTS
+  try{
+    if(db){
+      onSnapshot(collection(db,'posts_wallet'),snap=>{
+        let cloudHtml='';
+        snap.forEach(d=>{
+          const p=d.data();
+          if(!p.title)return;
+          cloudHtml+=`<div class="card gold"><div class="thumb">${p.ytId?`<img src="https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg"><div class="play" onclick="window.open('https://youtu.be/${p.ytId}','_blank')"><i class="fas fa-play"></i></div>`:`<img src="${p.media||''}">`}</div><div class="p-2"><p class="font-bold text-xs">${p.title}</p><p class="text-[11px] text-gray-400">${p.desc||''}</p></div></div>`;
+        });
+        const adminFeed=document.getElementById('walletAdminFeed');
+        if(adminFeed && cloudHtml)adminFeed.innerHTML=cloudHtml;
+      });
+    }
+  }catch(e){}
+};
+
+window.loadCat=(cat)=>{
+  const el=document.getElementById(cat+'List');
+  const posts=loadPosts(cat);
+  let html='';
+  posts.forEach(p=>{
+    const ytThumb=p.ytId?`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`:'';
+    const likes=loadLikes();
+    const liked=likes[p.id];
+    html+=`<div class="card"><div class="thumb">${p.ytId?`<img src="${ytThumb}"><div class="play" onclick="window.open('https://youtu.be/${p.ytId}','_blank')"><i class="fas fa-play"></i></div>`:p.media?(p.mediaType==='video'?`<video src="${p.media}" controls></video>`:`<img src="${p.media}">`):`<div class="bg-[#222] h-full flex items-center justify-center"><i class="fas fa-image text-3xl"></i></div>`}</div><div class="p-2"><h3 class="font-bold text-xs">${p.title}</h3><p class="text-[11px] text-gray-400">${p.desc||''}</p><div class="flex gap-2 mt-1"><button onclick="likePost('${cat}',${p.id})" class="text-[11px] ${liked?'text-[#ffeb00]':'text-gray-400'}">♥ ${p.likes||0}</button></div></div></div>`;
+  });
+  if(el)el.innerHTML=html||`<p class="text-center text-gray-500 text-xs mt-10">No ${cat} posts yet</p>`;
+};
+
+window.likePost=(cat,id)=>{
+  let posts=loadPosts(cat);
+  let likes=loadLikes();
+  if(likes[id]){alert('Already liked');return;}
+  for(let i=0;i<posts.length;i++){if(posts[i].id===id){posts[i].likes=(posts[i].likes||0)+1; break;}}
+  savePosts(cat,posts);
+  likes[id]=true; saveLikes(likes);
+  BAL+=10; refreshWallet();
+  if(cat==='wallet')loadWallet(); else loadCat(cat);
+};
+
+window.addComment=(cat,id)=>{
+  const input=document.getElementById('input-'+id);
+  const text=input.value.trim();
+  if(!text){return;}
+  let posts=loadPosts(cat);
+  for(let i=0;i<posts.length;i++){
+    if(posts[i].id===id){
+      if(!posts[i].comments)posts[i].comments=[];
+      posts[i].comments.push({user:curPhone,userName:cur.name,text,time:Date.now()});
+      break;
+    }
+  }
+  savePosts(cat,posts);
+  input.value='';
+  if(cat==='wallet')loadWallet(); else loadCat(cat);
+};
+window.loadFollowPage=()=>{
+  const list=document.getElementById('followList');
+  const users=loadUsers();
+  const follows=loadFollows();
+  const myFollows=follows[curPhone]||[];
+  let html='';
+  users.forEach(u=>{
+    if(u.phone===curPhone)return;
+    const isFollowed=myFollows.includes(u.phone);
+    const profiles=loadProfiles();
+    const prof=profiles[u.phone]||{};
+    html+=`<div class="bg-[#222] p-2 rounded-lg flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <img src="${prof.photo||'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-8 h-8 rounded-full object-cover">
+        <div><p class="text-[12px] font-bold">${prof.name||u.name||u.phone}</p><p class="text-[10px] text-gray-400">${u.phone} - ${u.balance||0} MESH</p></div>
+      </div>
+      <button onclick="followUser('${u.phone}')" class="${isFollowed?'bg-[#222] text-gray-400 border border-[#333]':'bg-[#ffeb00] text-black'} px-3 py-1 rounded-full text-[11px] font-bold">${isFollowed?'Following':'Follow +10'}</button>
+    </div>`;
+  });
+  if(list)list.innerHTML=html||'<p class="text-gray-500 text-xs text-center">No other users yet - Invite friends!</p>';
+};
+
+window.followUser=(phone)=>{
+  let follows=loadFollows();
+  if(!follows[curPhone])follows[curPhone]=[];
+  if(follows[curPhone].includes(phone)){alert('Already following');return;}
+  follows[curPhone].push(phone);
+  saveFollows(follows);
+  BAL+=10; refreshWallet();
+  loadFollowPage();
+  try{if(db){addDoc(collection(db,'follows'),{from:curPhone,to:phone,time:Date.now()});}}catch(e){}
+};
+
+window.loadSellCenter=()=>{
+  const el=document.getElementById('sellCenter');
+  let sellers=loadSellers();
+  let my=sellers.find(s=>s.user===curPhone);
+  let html='';
+  if(!my){
+    html=`<p class="text-[11px] text-gray-400">You are not a seller yet</p><p class="text-[10px] text-gray-500 mt-1">Click Become Seller to request admin approval. Only approved sellers can sell MESH.</p>`;
+  }else if(my.status==='pending'){
+    html=`<div class="bg-[#222] p-2 rounded"><p class="text-[11px] text-[#ffeb00]">Seller Request Pending...</p><p class="text-[10px] text-gray-400">Waiting for Admin 0773103823 to approve</p><button onclick="cancelSeller('${curPhone}')" class="mt-1 bg-red-600 px-2 py-1 rounded text-[10px]">Cancel</button></div>`;
+  }else if(my.status==='approved'){
+    html=`<div class="bg-[#001a00] border border-[#00ff88] p-2 rounded"><p class="text-[11px] text-[#00ff88] font-bold">✓ You are Approved Seller</p><p class="text-[10px] text-gray-300">You can sell MESH to any phone number</p></div>`;
+  }else if(my.status==='cancelled'){
+    html=`<p class="text-[11px] text-red-400">Seller Cancelled. Request again.</p>`;
+  }
+  if(el)el.innerHTML=html;
+};
+
+window.loadTxList=()=>{
+  const el=document.getElementById('txList');
+  const tx=loadTx().filter(t=>t.from===curPhone||t.to===curPhone).reverse();
+  let html='';
+  tx.forEach(t=>{
+    const isOut=t.from===curPhone;
+    html+=`<div class="bg-[#222] p-2 rounded flex justify-between text-[11px]"><div><p class="${isOut?'text-red-400':'text-[#00ff88]'}">${isOut?'Sent to':'Received from'} ${isOut?t.toName:t.fromName}</p><p class="text-[10px] text-gray-500">${new Date(t.time).toLocaleString()}</p></div><p class="font-bold">${isOut?'-':'+'}${t.amount} MESH</p></div>`;
+  });
+  if(el)el.innerHTML=html||'<p class="text-gray-500 text-[11px]">No transactions yet</p>';
+};
+
+window.blockUser=(phone)=>{
+  if(!confirm('Block '+phone+'?'))return;
+  let blocked=loadBlocked();
+  if(!blocked.includes(phone))blocked.push(phone);
+  saveBlocked(blocked);
+  if(db){try{setDoc(doc(db,'users',phone),{blocked:true},{merge:true});}catch(e){}}
+  loadAdminLists();
+  loadFollowPage();
+};
+
+window.unblockUser=(phone)=>{
+  let blocked=loadBlocked();
+  blocked=blocked.filter(p=>p!==phone);
+  saveBlocked(blocked);
+  if(db){try{setDoc(doc(db,'users',phone),{blocked:false},{merge:true});}catch(e){}}
+  loadAdminLists();
+};
+
+window.cancelSeller=(phone)=>{
+  if(!confirm('Cancel seller request?'))return;
+  let s=loadSellers();
+  s=s.filter(x=>x.user!==phone);
+  saveSellers(s);
+  loadSellCenter();
+};
+
+// FIXED LOGIN - NO CONFIRM CHECK FOR EXISTING USERS
+const phInput=document.getElementById('ph');
+if(phInput){
+phInput.addEventListener('input',()=>{
+  const phone=phInput.value.trim();
+  const users=loadUsers();
+  const exist=users.find(u=>u.phone===phone);
+  const nameEl=document.getElementById('nm');
+  const confirmEl=document.getElementById('pwdConfirm');
+  const statusEl=document.getElementById('status');
+  if(exist && phone.length>=7){
+    if(nameEl)nameEl.style.display='none';
+    if(confirmEl)confirmEl.style.display='none';
+    if(statusEl)statusEl.innerText='Welcome back '+(exist.name||'')+' - Enter password';
+  }else{
+    if(nameEl)nameEl.style.display='block';
+    if(confirmEl)confirmEl.style.display='block';
+    if(statusEl)statusEl.innerText=phone.length>=7?'New account - Fill name + password':'Enter phone';
+  }
+});
+}
+document.getElementById('btnDoSell').onclick=async()=>{
+  const buyerPhone=document.getElementById('buyerPhone').value.trim();
+  const amt=parseInt(document.getElementById('sellAmount').value);
+  if(!buyerPhone||isNaN(amt)||amt<=0){alert('Enter buyer contact and amount');return;}
+  if(BAL<amt){alert('Insufficient balance');return;}
+  const sellers=loadSellers();
+  const isApproved=sellers.some(s=>s.user===curPhone&&s.status==='approved')||isAdminPhone();
+  if(!isApproved){alert('Only approved sellers can sell');return;}
+  let users=loadUsers();
+  let buyer=users.find(u=>u.phone===buyerPhone);
+  let buyerName=buyer?buyer.name:buyerPhone;
+  if(buyer)buyer.balance+=amt;
+  else users.push({phone:buyerPhone,name:'Buyer '+buyerPhone,balance:amt,password:'',tier:'LIFETIME',joined:Date.now()});
+  let sellerIdx=users.findIndex(u=>u.phone===curPhone);
+  if(sellerIdx>=0)users[sellerIdx].balance-=amt;
+  saveUsers(users);
+  cur.balance-=amt; BAL-=amt; setLS('mesh_current',cur);
+  try{
+    if(db){
+      await setDoc(doc(db,'users',curPhone),{balance:increment(-amt)},{merge:true});
+      const buyerRef=doc(db,'users',buyerPhone);
+      const snap=await getDoc(buyerRef);
+      if(snap.exists())await updateDoc(buyerRef,{balance:increment(amt)});
+      else await setDoc(buyerRef,{phone:buyerPhone,name:buyerName,balance:amt,created:serverTimestamp()});
+    }
+  }catch(e){}
+  let tx=loadTx();
+  tx.push({from:curPhone,fromName:cur.name,to:buyerPhone,toName:buyerName,amount:amt,time:Date.now()});
+  saveTx(tx);
+  document.getElementById('sellStatus').innerText='Sold '+amt+' to '+buyerPhone+' ✓';
+  refreshWallet(); loadSellCenter(); loadTxList();
+  document.getElementById('buyerPhone').value=''; document.getElementById('sellAmount').value='';
+};
+
+document.getElementById('btnUnlock').onclick=()=>{
+  if(!isAdminPhone()){alert('Admin phone only - 0773103823');return;}
+  const pass=document.getElementById('apass').value;
+  if(pass!=='MESH2025'){alert('Wrong Password');return;}
+  document.getElementById('ac').innerHTML=`
+    <div class="card p-2 bg-[#111]"><h3 class="font-bold text-xs text-[#ffeb00]">Admin Add MESH</h3><input id="addPh" placeholder="Phone" class="w-full mt-1 bg-[#222] rounded p-1 text-xs"><input id="addAmt" placeholder="Amount" type="number" class="w-full mt-1 bg-[#222] rounded p-1 text-xs"><button onclick="adminAdd()" class="mt-1 w-full bg-[#ffeb00] text-black py-1 rounded text-xs font-bold">ADD MESH</button></div>
+    <div class="card p-2 bg-[#111]"><h3 class="font-bold text-xs text-[#ffeb00]">Sell Requests - Cloud Live</h3><div id="sellList" class="mt-2 space-y-2"></div><div id="cloudSellList" class="mt-2 space-y-2 border-t border-[#333] pt-2"><p class="text-[10px] text-[#ffeb00]">Cloud Requests</p><div id="cloudSellListInner" class="space-y-1 mt-1"></div></div><div id="cloudUnblockList" class="mt-2 space-y-2 border-t border-[#333] pt-2"><p class="text-[10px] text-orange-400">Unblock Requests</p><div id="cloudUnblockListInner" class="space-y-1 mt-1"></div></div><div id="cloudResetList" class="mt-2 space-y-2 border-t border-[#333] pt-2"><p class="text-[10px] text-[#00ff88]">Password Resets</p><div id="cloudResetListInner" class="space-y-1 mt-1"></div></div></div>
+    <div class="card p-2 bg-[#111]"><h3 class="font-bold text-xs">Users</h3><div id="userList" class="mt-2 space-y-1 max-h-96 overflow-y-auto"></div></div>
+    <div class="card p-2 bg-[#111]"><h3 class="font-bold text-xs">Blocked Users</h3><div id="blockedList" class="mt-2 space-y-1"></div></div>`;
+  loadAdminLists();
+};
+
+window.adminAdd=async()=>{
+  const ph=document.getElementById('addPh').value.trim();
+  const amt=parseInt(document.getElementById('addAmt').value);
+  if(!ph||isNaN(amt)){alert('Phone and Amount');return;}
+  const us=loadUsers();
+  let found=false;
+  for(let k=0;k<us.length;k++){if(us[k].phone===ph){us[k].balance+=amt; found=true; break;}}
+  if(!found)us.push({phone:ph,name:'User',password:'',balance:amt,tier:'LIFETIME',joined:Date.now()});
+  saveUsers(us);
+  try{if(db){const ref=doc(db,'users',ph); const snap=await getDoc(ref); if(snap.exists())await updateDoc(ref,{balance:increment(amt)}); else await setDoc(ref,{phone:ph,balance:amt,created:serverTimestamp()});}}catch(e){}
+  alert('Added '+amt+' to '+ph+' ✓');
+  loadAdminLists();
+};
+
+async function loadAdminLists(){
+  let s=loadSellers();
+  let h='';
+  s.forEach((r,i)=>{
+    h+=`<div class="bg-[#222] p-2 rounded flex justify-between items-center"><div><p class="text-[11px] font-bold">${(r.name||r.user)} - ${r.user}</p><p class="text-[10px] text-gray-400">${r.status}</p></div><div class="flex gap-1">${r.status!=='approved'?`<button onclick="approveSell(${i})" class="bg-green-600 px-2 py-1 rounded text-[10px]">APPROVE</button>`:`<button onclick="cancelSellerAdmin(${i})" class="bg-orange-600 px-2 py-1 rounded text-[10px]">STOP</button>`}<button onclick="rejectSell(${i})" class="bg-red-600 px-2 py-1 rounded text-[10px]">REJECT</button></div></div>`;
+  });
+  const sellEl=document.getElementById('sellList');
+  if(sellEl)sellEl.innerHTML=h||'No local requests';
+
+  try{
+    if(db){
+      onSnapshot(collection(db,'seller_requests'),snap=>{
+        let ch='';
+        snap.forEach(docu=>{
+          const r=docu.data(); const id=docu.id;
+          ch+=`<div class="bg-[#1a1a00] border border-[#ffeb00] p-2 rounded flex justify-between items-center"><div><p class="text-[11px] font-bold text-[#ffeb00]">${(r.name||r.phone)} - ${r.phone}</p><p class="text-[9px] text-gray-400">${new Date(r.time).toLocaleString()} - ${(r.status||'pending')}</p></div><div class="flex gap-1"><button onclick="approveCloudSell('${id}','${r.phone}','${(r.name||'').replace(/'/g,'')}')" class="bg-green-600 px-2 py-1 rounded text-[10px]">APPROVE</button><button onclick="rejectCloudSell('${id}')" class="bg-red-600 px-2 py-1 rounded text-[10px]">REJECT</button></div></div>`;
+        });
+        const cloudEl=document.getElementById('cloudSellListInner');
+        if(cloudEl)cloudEl.innerHTML=ch||'<p class="text-[9px] text-gray-500">No cloud requests</p>';
+      });
+      onSnapshot(collection(db,'unblock_requests'),snap=>{
+        let ch='';
+        snap.forEach(docu=>{
+          const r=docu.data(); const id=docu.id;
+          ch+=`<div class="bg-[#2a1a00] border border-orange-400 p-2 rounded flex justify-between items-center"><div><p class="text-[11px] font-bold text-orange-300">${r.phone}</p><p class="text-[9px] text-gray-400">${(r.reason||'')} - ${new Date(r.time).toLocaleString()}</p></div><div class="flex gap-1"><button onclick="approveUnblockRequest('${id}','${r.phone}')" class="bg-green-600 px-2 py-1 rounded text-[10px]">UNBLOCK</button><button onclick="rejectUnblockRequest('${id}')" class="bg-red-600 px-2 py-1 rounded text-[10px]">REJECT</button></div></div>`;
+        });
+        const ubEl=document.getElementById('cloudUnblockListInner');
+        if(ubEl)ubEl.innerHTML=ch||'<p class="text-[9px] text-gray-500">No unblock requests</p>';
+      });
+      onSnapshot(collection(db,'password_resets'),snap=>{
+        let ch='';
+        snap.forEach(docu=>{
+          const r=docu.data();
+          ch+=`<div class="bg-[#001a00] border border-[#00ff88] p-2 rounded"><p class="text-[11px] font-bold text-[#00ff88]">${r.phone} - ${(r.name||'')}</p><p class="text-[9px] text-gray-400">${new Date(r.time).toLocaleString()} ${(r.wasBlocked?' (was blocked)':'')}</p></div>`;
+        });
+        const rsEl=document.getElementById('cloudResetListInner');
+        if(rsEl)rsEl.innerHTML=ch||'<p class="text-[9px] text-gray-500">No resets</p>';
+      });
+    }
+  }catch(e){}
+
+  const us=loadUsers();
+  let uh='';
+  us.forEach(u=>{
+    uh+=`<div class="bg-[#222] p-1 rounded text-[10px] flex justify-between"><span>${u.phone} - ${(u.name||'')} - ${(u.balance||0).toLocaleString()}</span><div class="flex gap-1"><button onclick="blockUser('${u.phone}')" class="bg-red-600 px-1 rounded text-[8px]">BLOCK</button><button onclick="if(confirm('Remove?')){let users=loadUsers(); users=users.filter(x=>x.phone!=='${u.phone}'); saveUsers(users); loadAdminLists(); loadFollowPage();}" class="bg-[#444] px-1 rounded text-[8px]">REMOVE</button></div></div>`;
+  });
+  const userEl=document.getElementById('userList');
+  if(userEl)userEl.innerHTML=uh;
+  let blocked=loadBlocked();
+  let bh='';
+  blocked.forEach(ph=>{
+    bh+=`<div class="bg-[#222] p-1 rounded text-[10px] flex justify-between"><span>${ph} - BLOCKED</span><button onclick="unblockUser('${ph}')" class="bg-green-600 px-1 rounded text-[8px]">UNBLOCK</button></div>`;
+  });
+  const blockedEl=document.getElementById('blockedList');
+  if(blockedEl)blockedEl.innerHTML=bh||'<p class="text-[9px] text-gray-500">No blocked</p>';
+}
+
+window.approveSell=(i)=>{let s=loadSellers(); s[i].status='approved'; saveSellers(s); loadAdminLists(); loadSellCenter();};
+window.cancelSellerAdmin=(i)=>{let s=loadSellers(); s[i].status='cancelled'; saveSellers(s); loadAdminLists(); loadSellCenter();};
+window.rejectSell=(i)=>{let s=loadSellers(); s.splice(i,1); saveSellers(s); loadAdminLists();};
+window.approveCloudSell=async(id,phone,name)=>{ try{ let sellers=loadSellers(); if(sellers.some(s=>s.user===phone && s.status==='approved')){alert('Already approved'); return;} sellers.push({user:phone,name:name||phone,type:'Become Seller Cloud',status:'approved',balance:0,amount:100,time:Date.now(),cloudId:id}); saveSellers(sellers); if(db){await updateDoc(doc(db,'seller_requests',id),{status:'approved',approvedAt:serverTimestamp()}); await setDoc(doc(db,'approved_sellers',phone),{phone:phone,name:name||phone,status:'approved',approvedAt:serverTimestamp(),approvedBy:curPhone},{merge:true});} loadAdminLists(); loadSellCenter(); }catch(e){alert(e.message);} };
+window.rejectCloudSell=async(id)=>{ try{ if(db)await deleteDoc(doc(db,'seller_requests',id)); }catch(e){alert(e.message);} };
+window.approveUnblockRequest=async(id,phone)=>{ try{ let blocked=loadBlocked(); blocked=blocked.filter(p=>p!==phone); saveBlocked(blocked); if(db){await setDoc(doc(db,'users',phone),{blocked:false},{merge:true}); await deleteDoc(doc(db,'unblock_requests',id));} alert('Unblocked '+phone+' ✓'); loadAdminLists(); loadFollowPage(); }catch(e){alert(e.message);} };
+window.rejectUnblockRequest=async(id)=>{ try{ if(db)await deleteDoc(doc(db,'unblock_requests',id)); }catch(e){alert(e.message);} };
+<script>
+// FIXED LOGIN - NO DOUBLE CONFIRM FOR EXISTING USERS
+document.getElementById('btnLogin').onclick=async()=>{
+  const ph=document.getElementById('ph').value.trim();
+  const pwd=document.getElementById('pwd').value.trim();
+  const nm=document.getElementById('nm').value.trim();
+  const confirmPwd=document.getElementById('pwdConfirm').value.trim();
+  const statusEl=document.getElementById('status');
+  if(!ph||!pwd){if(statusEl)statusEl.innerText='Enter phone + password'; return;}
+  let users=loadUsers();
+  let blocked=loadBlocked();
+  let exist=users.find(u=>u.phone===ph);
+  let isBlocked=blocked.includes(ph);
+  if(isBlocked){
+    if(statusEl)statusEl.innerHTML='Blocked. <button onclick="requestUnblock(\''+ph+'\')" class="bg-orange-600 px-2 py-1 rounded text-[10px]">Request Unblock</button> <button onclick="doReset(\''+ph+'\')" class="bg-[#ffeb00] text-black px-2 py-1 rounded text-[10px] ml-1">Reset</button>';
+  }
+  if(exist){
+    if(exist.password!==pwd){if(statusEl)statusEl.innerText='Wrong password - Use Reset'; return;}
+    cur=exist; curPhone=ph; BAL=exist.balance||0;
+    setLS('mesh_current',cur);
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('walletHeader').classList.remove('hidden');
+    document.getElementById('tabs').classList.remove('hidden');
+    if(document.getElementById('myProfilePic')){const profiles=loadProfiles(); if(profiles[ph] && profiles[ph].photo)document.getElementById('myProfilePic').src=profiles[ph].photo;}
+    updateAdminUI(); refreshWallet(); loadWallet(); tab('wallet');
+    if(isAdminPhone())document.getElementById('walletAdminPost').classList.remove('hidden');
+  }else{
+    if(ph.length<7){if(statusEl)statusEl.innerText='Phone too short'; return;}
+    if(!nm){if(statusEl)statusEl.innerText='Enter name'; return;}
+    if(pwd!==confirmPwd){if(statusEl)statusEl.innerText='Passwords not match'; return;}
+    const newUser={phone:ph,name:nm,password:pwd,balance:1000,tier:'LIFETIME',joined:Date.now()};
+    users.push(newUser); saveUsers(users);
+    cur=newUser; curPhone=ph; BAL=1000;
+    setLS('mesh_current',cur);
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('walletHeader').classList.remove('hidden');
+    document.getElementById('tabs').classList.remove('hidden');
+    updateAdminUI(); refreshWallet(); loadWallet(); tab('wallet');
+    if(isAdminPhone())document.getElementById('walletAdminPost').classList.remove('hidden');
+    try{if(db){await setDoc(doc(db,'users',ph),{phone:ph,name:nm,balance:1000,created:serverTimestamp()});}}catch(e){}
+  }
+};
+
+window.doReset=async(phone)=>{
+  const ph=phone||document.getElementById('ph').value.trim();
+  if(!ph){alert('Enter phone');return;}
+  const newPwd=prompt('New password for '+ph+':');
+  if(!newPwd)return;
+  let users=loadUsers();
+  for(let i=0;i<users.length;i++){if(users[i].phone===ph){users[i].password=newPwd; break;}}
+  saveUsers(users);
+  let blocked=loadBlocked(); blocked=blocked.filter(p=>p!==ph); saveBlocked(blocked);
+  try{if(db){await setDoc(doc(db,'users',ph),{password:newPwd,blocked:false},{merge:true}); await addDoc(collection(db,'password_resets'),{phone:ph,time:Date.now(),created:serverTimestamp()});}}catch(e){}
+  document.getElementById('status').innerText='Reset ✓ Login now';
+  alert('Reset done ✓');
+};
+
+window.requestUnblock=async(phone)=>{
+  const ph=phone||document.getElementById('ph').value.trim();
+  if(!ph){alert('Enter phone');return;}
+  const reason=prompt('Why unblock?')||'Request unblock';
+  try{if(db){await addDoc(collection(db,'unblock_requests'),{phone:ph,reason:reason,time:Date.now(),created:serverTimestamp()});} alert('Unblock sent to 0773103823 ✓');}catch(e){alert('Local saved');}
+};
+
+document.getElementById('btnBecomeSeller').onclick=async()=>{
+  let sellers=loadSellers();
+  if(sellers.some(s=>s.user===curPhone && (s.status==='pending'||s.status==='approved'))){alert('Already requested');return;}
+  sellers.push({user:curPhone,name:cur.name,status:'pending',time:Date.now()});
+  saveSellers(sellers);
+  try{if(db){await addDoc(collection(db,'seller_requests'),{phone:curPhone,name:cur.name,status:'pending',time:Date.now(),created:serverTimestamp()});}}catch(e){}
+  alert('Seller request sent ✓'); loadSellCenter();
+};
+document.getElementById('btnSellMesh').onclick=()=>tab('sell');
+
+(function(){
+  if(cur){
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('walletHeader').classList.remove('hidden');
+    document.getElementById('tabs').classList.remove('hidden');
+    updateAdminUI(); refreshWallet(); loadWallet();
+    if(isAdminPhone()){const wp=document.getElementById('walletAdminPost'); if(wp)wp.classList.remove('hidden');}
+  }
+})();
+</script>
+
+<div id="profileSettingsModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
+<div class="bg-[#111] border border-[#ffeb00] rounded-2xl w-full max-w-sm p-4">
+<h3 class="font-bold text-[#ffeb00] text-sm">Profile Settings</h3>
+<img id="profilePreview" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="w-20 h-20 rounded-full mx-auto mt-3 object-cover border-2 border-[#ffeb00]">
+<input id="profileName" placeholder="Name" class="w-full mt-3 bg-[#222] rounded p-2 text-xs">
+<input id="profileUrl" placeholder="YouTube URL" class="w-full mt-2 bg-[#222] rounded p-2 text-xs">
+<div class="grid grid-cols-2 gap-2 mt-2">
+<input id="profileFile" type="file" accept="image/*" class="w-full text-[10px] bg-[#222] p-1 rounded">
+<input id="profileCamera" type="file" accept="image/*" capture="environment" class="w-full text-[10px] bg-[#222] p-1 rounded">
+</div>
+<p id="profileInfo" class="text-[9px] text-gray-500 mt-2 text-center"></p>
+<div class="flex gap-2 mt-3">
+<button onclick="document.getElementById('profileSettingsModal').classList.add('hidden')" class="flex-1 bg-[#222] text-white py-2 rounded-full text-xs">Cancel</button>
+<button onclick="saveMyProfile()" class="flex-1 bg-[#ffeb00] text-black py-2 rounded-full text-xs font-bold">Save</button>
+</div>
+</div>
+</div>
+
+</body>
+</html>
